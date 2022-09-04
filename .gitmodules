@@ -1,3 +1,6 @@
 [submodule "lib/ESP8266-Arduino-OTA"]
 	path = lib/ESP8266-Arduino-OTA
 	url = git@github.com:t-liu93/ESP8266-Arduino-OTA.git
+[submodule "lib/hdc1080-adruino"]
+	path = lib/hdc1080-adruino
+	url = git@github.com:t-liu93/hdc1080-adruino.git
