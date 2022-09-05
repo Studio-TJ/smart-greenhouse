@@ -1,4 +1,3 @@
-#include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 
 #include "common.h"
@@ -21,6 +20,8 @@ void Fan::publishInitialState() {
     configInfo["percentage_command_topic"] = FanInfo.percentageCommandTopic;
     configInfo["percentage_state_topic"] = FanInfo.statusTopic;
     configInfo["percentage_value_template"] = FanInfo.percentageValueTemplate;
+    configInfo["speed_range_min"] = FanInfo.speedPercentageRangeMin;
+    configInfo["speed_range_max"] = FanInfo.speedPercentageRangeMax;
 
     configInfo["state_topic"] = FanInfo.statusTopic;
     configInfo["state_value_template"] = FanInfo.stateValueTempalte;

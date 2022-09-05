@@ -1,19 +1,22 @@
 #include <Arduino.h>
 #include <WiFiManager.h>
+#include <Wire.h>
 #include <TaskScheduler.h>
 
 #include "esp8266ota.h"
+#include "hdc1080.h"
+#include "devices/airsensor.h"
 #include "communication/mqtt.h"
 
 uint8_t pin = LOW;
 uint16_t dutyCycleValue = 0;
 uint8_t testPin = 14;
-uint8_t pwmPin = 15;
+uint8_t pwmPin = 13;
 uint8_t encoderPin = 12;
 uint8_t encoderSmallPin = D8;
 int16_t delta = 4;
 int16_t pwmValue = 0;
-uint16_t range = 256;
+uint16_t range = 255;
 uint64_t lastMills = 0;
 uint64_t lastMillsLong = 0;
 volatile uint64_t encoderStep = 0;
@@ -21,6 +24,7 @@ volatile uint64_t encoderStepsSmall = 0;
 
 WiFiManager *wifiManager = nullptr;
 Esp8266OTA *updater = nullptr;
+HDC1080 * hdc1080 = nullptr;
 Scheduler *scheduler = nullptr;
 
 Task *updaterTask = nullptr;
@@ -35,16 +39,24 @@ void initializeScheduler();
 void updaterTick();
 void mqttTick();
 
+void measurementTick();
+Task *measurementTask = nullptr;
+
 void encoderTick();
 void encoderSmallTick();
 Task *encoderTask = nullptr;
+// ADC_MODE(ADC_VCC);
+ADC_MODE(ADC_TOUT);
 
 void setup() {
     Serial.begin(115200);
+    Wire.begin(D2, D1);
+    // Serial.println(ESP.getVcc());
     initializeWifi();
     updater = new Esp8266OTA("esp8266", "password");
-    initializeScheduler();
     MQTT::connect("10.238.75.62", 1883, "mqtt", "mqtt");
+    AirSensor::publishConfig();
+    initializeScheduler();
     // put your setup code here, to run once:
     // pinMode(LED_BUILTIN, OUTPUT);
     pinMode(testPin, OUTPUT);
@@ -54,11 +66,12 @@ void setup() {
     // pinMode(encoderSmallPin, INPUT_PULLDOWN_16);
     // pinMode(encoderSmallPin, OUTPUT);
     digitalWrite(encoderSmallPin, LOW);
+    pinMode(A0, INPUT);
     // digitalWrite(LED_BUILTIN, pin);
-    digitalWrite(testPin, HIGH);
+    // digitalWrite(testPin, HIGH);
     // analogWrite(testPin, 0);
     analogWrite(pwmPin, 0);
-    analogWriteFreq(1000);
+    analogWriteFreq(500);
     analogWriteRange(range);
     // analogWrite(testPin, 255);
     // attachInterrupt(digitalPinToInterrupt(0), pinTriggered, FALLING);
@@ -109,15 +122,29 @@ void encoderSmallTriggered() {
 }
 
 void encoderTick() {
-    int rpm = (encoderStep / 2) * 60;
-    int rpmSmall = (encoderStepsSmall / 2) * 60;
-    Serial.println(encoderStepsSmall);
-    encoderStep = 0;
-    encoderStepsSmall = 0;
-    Serial.write("rpm1: ");
-    Serial.print(rpm);
-    Serial.write(", rpm2: ");
-    Serial.println(rpmSmall);
+    // int rpm = (encoderStep / 2) * 60;
+    // int rpmSmall = (encoderStepsSmall / 2) * 60;
+    // Serial.println(encoderStepsSmall);
+    // encoderStep = 0;
+    // encoderStepsSmall = 0;
+    // Serial.write("rpm1: ");
+    // Serial.print(rpm);
+    // Serial.write(", rpm2: ");
+    // Serial.println(rpmSmall);
+
+    // float sensor = ((float)analogRead(A0)) / 1024.0;
+    // float r = (sensor * 820000) / (3.3 - sensor);
+    // Serial.println(r);
+    // Serial.println(hdc1080->measureTemperature());
+    // Serial.println(hdc1080->measureHumidity());
+    // AirData airdata = hdc1080->measureTempAndHum();
+    // Serial.print(airdata.temperature);
+    // Serial.print(", ");
+    // Serial.println(airdata.humidity);
+}
+
+void measurementTick() {
+    AirSensor::readAndPublish();
 }
 
 void initializeWifi() {
@@ -132,6 +159,8 @@ void initializeScheduler() {
     mqttTickTask = new Task(TASK_MILLISECOND, TASK_FOREVER, mqttTick, scheduler, true, nullptr, nullptr);
 
     encoderTask = new Task(TASK_SECOND, TASK_FOREVER, encoderTick, scheduler, true, nullptr, nullptr);
+
+    measurementTask = new Task(TASK_SECOND * 15, TASK_FOREVER, measurementTick, scheduler, true, nullptr);
 }
 
 void updaterTick() {

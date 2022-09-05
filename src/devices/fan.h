@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ESP8266WiFi.h>
+
 const struct {
     const String uniqueId = "fan_" + WiFi.macAddress();
     const String name = "greenhouse_fan";
@@ -14,6 +16,8 @@ const struct {
 
     const String availabilityTemplate = "{{ value_json.availability }}";
     const String percentageValueTemplate = "{{ value_json.percentage }}";
+    const int speedPercentageRangeMin = 1;
+    const int speedPercentageRangeMax = 100;
 } FanInfo;
 
 class Fan {

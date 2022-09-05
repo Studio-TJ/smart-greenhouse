@@ -4,6 +4,7 @@
 #include "mqtt.h"
 #include "../devices/common.h"
 #include "../devices/fan.h"
+#include "../devices/airsensor.h"
 
 constexpr uint16_t CONFIG_MSG_SIZE = 2048;
 
@@ -120,9 +121,9 @@ void MQTT::mqtt_cb(char* topic, byte* payload, unsigned int length) {
         memcpy(percentageChar, payload, length);
         float percentage = atof(percentageChar);
         Serial.println(percentage);
-        int dutyCycle = (int) (percentage * 256 / 100);
+        int dutyCycle = (int) (percentage * 255 / 100);
         Serial.println(dutyCycle);
-        analogWrite(15, dutyCycle);
+        analogWrite(13, dutyCycle);
         // analogWrite(14, dutyCycle);
     }
     // if (Heater.fanModes.setTopic.equals(topic)) {
