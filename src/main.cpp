@@ -4,7 +4,7 @@
 #include <TaskScheduler.h>
 
 #include "esp8266ota.h"
-#include "hdc1080.h"
+#include "pca9555.h"
 #include "devices/airsensor.h"
 #include "communication/mqtt.h"
 
@@ -12,7 +12,7 @@ uint8_t pin = LOW;
 uint16_t dutyCycleValue = 0;
 uint8_t testPin = 14;
 uint8_t pwmPin = 13;
-uint8_t encoderPin = 12;
+uint8_t encoderPin = D6;
 uint8_t encoderSmallPin = D8;
 int16_t delta = 4;
 int16_t pwmValue = 0;
@@ -24,7 +24,8 @@ volatile uint64_t encoderStepsSmall = 0;
 
 WiFiManager *wifiManager = nullptr;
 Esp8266OTA *updater = nullptr;
-HDC1080 * hdc1080 = nullptr;
+PCA9555 *pca9555 = nullptr;
+PCA9685 *pca9685 = nullptr;
 Scheduler *scheduler = nullptr;
 
 Task *updaterTask = nullptr;
@@ -51,6 +52,10 @@ ADC_MODE(ADC_TOUT);
 void setup() {
     Serial.begin(115200);
     Wire.begin(D2, D1);
+    pca9555 = new PCA9555(1, 1, 1);
+    pca9555->setPinType(PIN_1_7, INPUT_PIN);
+
+    pca9685 = new PCA9685(0b1000001);
     // Serial.println(ESP.getVcc());
     initializeWifi();
     updater = new Esp8266OTA("esp8266", "password");
@@ -59,9 +64,11 @@ void setup() {
     initializeScheduler();
     // put your setup code here, to run once:
     // pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(testPin, OUTPUT);
+    // pinMode(testPin, OUTPUT);
     pinMode(pwmPin, OUTPUT);
     // pinMode(0, INPUT_PULLUP);
+    // pinMode(D6, OUTPUT);
+    // digitalWrite(D6, HIGH);
     pinMode(encoderPin, INPUT_PULLUP);
     // pinMode(encoderSmallPin, INPUT_PULLDOWN_16);
     // pinMode(encoderSmallPin, OUTPUT);
@@ -113,7 +120,12 @@ void pinTriggered() {
 }
 
 void encoderTriggered() {
-    encoderStep ++;
+    detachInterrupt(encoderPin);
+    // encoderStep ++;
+    if (pca9555->readPinValue(PIN_1_7)) encoderStep++;
+    // Serial.println(pca9555->readPinValue(PIN_1_7));
+    // Serial.println(digitalRead(encoderPin));
+    attachInterrupt(digitalPinToInterrupt(encoderPin), encoderTriggered, FALLING);
 }
 
 void encoderSmallTriggered() {
@@ -122,13 +134,13 @@ void encoderSmallTriggered() {
 }
 
 void encoderTick() {
-    // int rpm = (encoderStep / 2) * 60;
+    int rpm = (encoderStep / 2) * 60;
     // int rpmSmall = (encoderStepsSmall / 2) * 60;
     // Serial.println(encoderStepsSmall);
-    // encoderStep = 0;
+    encoderStep = 0;
     // encoderStepsSmall = 0;
     // Serial.write("rpm1: ");
-    // Serial.print(rpm);
+    Serial.println(rpm);
     // Serial.write(", rpm2: ");
     // Serial.println(rpmSmall);
 
@@ -141,6 +153,10 @@ void encoderTick() {
     // Serial.print(airdata.temperature);
     // Serial.print(", ");
     // Serial.println(airdata.humidity);
+    // pca9555->setPinType(PIN_1_7, INPUT_PIN);
+    // pca9555->setPinType(PinNumber::PIN_1_0, PinType::OUTPUT_PIN);
+    // pca9555->togglePin(PIN_1_0);
+    // Serial.println(pca9555->readPinValue(PIN_1_7));
 }
 
 void measurementTick() {

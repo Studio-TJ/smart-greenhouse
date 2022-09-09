@@ -4,3 +4,6 @@
 [submodule "lib/hdc1080-adruino"]
 	path = lib/hdc1080-adruino
 	url = git@github.com:t-liu93/hdc1080-adruino.git
+[submodule "lib/pca9555-arduino"]
+	path = lib/pca9555-arduino
+	url = git@github.com:t-liu93/pca9555-arduino.git
