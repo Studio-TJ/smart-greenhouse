@@ -7,15 +7,17 @@
  *
  */
 typedef enum {
-    SET_FAN = 1 | 1 << 7,
-    GET_FAN = 1,
+    SET_FAN_POWER = 1 | 1 << 7,
+    GET_FAN_POWER = 1,
+    SET_FAN_SPEED = 2 | 1 << 7,
+    GET_FAN_SPEED = 2,
 
     UNKNOWN = 0,
 } CommandType;
 
-typedef struct {
-    boolean enable : 1;
-    uint8_t percentage : 7;
+typedef union {
+    boolean enable;
+    uint8_t percentage;
 } FanControl;
 
 typedef union {
