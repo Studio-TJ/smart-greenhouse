@@ -14,12 +14,12 @@ typedef enum {
 } CommandType;
 
 typedef struct {
-    boolean enable;
+    boolean enable : 1;
     uint8_t percentage : 7;
 } FanControl;
 
 typedef union {
-    FanControl fanSpeed;
+    FanControl fanControl;
     uint8_t rawValue;
 } CommandValue;
 
