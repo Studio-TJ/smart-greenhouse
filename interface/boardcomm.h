@@ -26,7 +26,7 @@ typedef union {
 
 typedef union {
     boolean enable;
-    uint8_t brightnessPercentage;
+    uint8_t brightness;
 } LightControl;
 
 typedef union {
