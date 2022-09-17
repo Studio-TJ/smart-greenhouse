@@ -1,6 +1,5 @@
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
-#include <Adafruit_PWMServoDriver.h>
 
 #include "mqtt.h"
 #include "boardcomm.h"
@@ -19,8 +18,6 @@ String MQTT::uName = "";
 String MQTT::pass = "";
 boolean MQTT::initialized = false;
 std::map<String, Callback> MQTT::callback = {};
-
-Adafruit_PWMServoDriver *pwm = new Adafruit_PWMServoDriver(0b1000001);
 
 const struct {
     const String uniqueId = "heater_" + WiFi.macAddress();

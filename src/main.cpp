@@ -2,11 +2,9 @@
 #include <WiFiManager.h>
 #include <Wire.h>
 #include <TaskScheduler.h>
-#include <Adafruit_PWMServoDriver.h>
 #include <ESP8266AVRISP.h>
 
 #include "esp8266ota.h"
-#include "pca9555.h"
 #include "devices/airsensor.h"
 #include "devices/fan.h"
 #include "devices/light.h"
@@ -28,10 +26,8 @@ volatile uint64_t encoderStepsSmall = 0;
 
 WiFiManager *wifiManager = nullptr;
 Esp8266OTA *updater = nullptr;
-PCA9555 *pca9555 = nullptr;
 Scheduler *scheduler = nullptr;
 ESP8266AVRISP *avrIsp = nullptr;
-Adafruit_PWMServoDriver *pwmDriver = nullptr;
 Fan *fan = nullptr;
 Light *light = nullptr;
 
@@ -66,8 +62,6 @@ ADC_MODE(ADC_TOUT);
 void setup() {
     Serial.begin(115200);
     Wire.begin(D2, D1);
-    pca9555 = new PCA9555(1, 1, 1);
-    pca9555->setPinType(PIN_1_7, INPUT_PIN);
     avrIsp = new ESP8266AVRISP(1000, D4);
     avrIsp->setReset(false);
     avrIsp->begin();
