@@ -1,0 +1,3 @@
+[submodule "lib/greenhouse-controller-interface"]
+	path = lib/greenhouse-controller-interface
+	url = git@github.com:t-liu93/greenhouse-controller-interface.git
