@@ -7,3 +7,6 @@
 [submodule "lib/pca9555-arduino"]
 	path = lib/pca9555-arduino
 	url = git@github.com:t-liu93/pca9555-arduino.git
+[submodule "lib/greenhouse-controller-interface"]
+	path = lib/greenhouse-controller-interface
+	url = git@github.com:t-liu93/greenhouse-controller-interface.git

@@ -89,8 +89,12 @@ void AirSensor::readAndPublish() {
     AirData airData = temperatureSensor.measureTempAndHum();
     int temperatureInt = (int)(airData.temperature * 100);
     int humidityInt = (int)(airData.humidity * 100);
-    stateInfo["temperature"] = (double)temperatureInt / 100;
-    stateInfo["humidity"] = humidityInt;
+    Serial.print("Temp: ");
+    Serial.print((double)temperatureInt / 100);
+    Serial.print(", hum: ");
+    Serial.println(humidityInt);
+    if (airData.temperature != -40 ) stateInfo["temperature"] = (double)temperatureInt / 100;
+    if (humidityInt != 100) stateInfo["humidity"] = humidityInt;
     stateInfo["availability"] = temperatureSensor.deviceIsAvailable()? Availability.available : Availability.notAvailable;
     String outJson;
     serializeJson(stateInfo, outJson);

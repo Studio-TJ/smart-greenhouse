@@ -2,6 +2,9 @@
 
 #include <PubSubClient.h>
 #include <WiFiClient.h>
+#include <map>
+
+typedef std::function<void(byte*, int)> Callback;
 
 class MQTT
 {
@@ -20,6 +23,9 @@ public:
     static String uName;
     static String pass;
 
+    static std::map<String, Callback> callback;
+
 private:
     MQTT() {}
+    static boolean initialized;
 };

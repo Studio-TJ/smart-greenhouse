@@ -1,7 +1,9 @@
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
+#include <Adafruit_PWMServoDriver.h>
 
 #include "mqtt.h"
+#include "boardcomm.h"
 #include "../devices/common.h"
 #include "../devices/fan.h"
 #include "../devices/airsensor.h"
@@ -15,6 +17,10 @@ String MQTT::ip = "";
 uint16_t MQTT::port = 1883;
 String MQTT::uName = "";
 String MQTT::pass = "";
+boolean MQTT::initialized = false;
+std::map<String, Callback> MQTT::callback = {};
+
+Adafruit_PWMServoDriver *pwm = new Adafruit_PWMServoDriver(0b1000001);
 
 const struct {
     const String uniqueId = "heater_" + WiFi.macAddress();
@@ -116,15 +122,9 @@ void publishInitialStateHeater() {
 
 void MQTT::mqtt_cb(char* topic, byte* payload, unsigned int length) {
     Serial.println(topic);
-    if (FanInfo.percentageCommandTopic.equals(topic)) {
-        char percentageChar[length] = {0,};
-        memcpy(percentageChar, payload, length);
-        float percentage = atof(percentageChar);
-        Serial.println(percentage);
-        int dutyCycle = (int) (percentage * 255 / 100);
-        Serial.println(dutyCycle);
-        analogWrite(13, dutyCycle);
-        // analogWrite(14, dutyCycle);
+    String topicStr = String(topic);
+    if (MQTT::callback.count(topicStr) != 0) {
+        MQTT::callback[topicStr](payload, length);
     }
     // if (Heater.fanModes.setTopic.equals(topic)) {
     //     // Set fanmode
@@ -142,6 +142,15 @@ void MQTT::mqtt_cb(char* topic, byte* payload, unsigned int length) {
     // }
 }
 
+void MQTT::checkConnection() {
+    // Serial.println(MQTT::client.connected());
+    if (!MQTT::initialized) return;
+    if (!MQTT::client.connected()) {
+        Serial.println("MQTT reconnect");
+        MQTT::client.connect("Greenhouse Controller", MQTT::uName.c_str(), MQTT::pass.c_str());
+    }
+}
+
 void MQTT::connect(String brokerIp, uint16_t brokerPort, String brokerUserName, String brokerPass) {
     MQTT::ip = brokerIp;
     MQTT::port = brokerPort;
@@ -153,7 +162,7 @@ void MQTT::connect(String brokerIp, uint16_t brokerPort, String brokerUserName, 
 
         publishConfigMessage();
         publishInitialStateHeater();
-        Fan::publishInitialState();
+        // Fan::publishInitialState();
         client.subscribe("studiotj/greenhouse/+/+/set/#");
         client.setCallback(mqtt_cb);
 
@@ -165,6 +174,7 @@ void MQTT::connect(String brokerIp, uint16_t brokerPort, String brokerUserName, 
         // {
         //     ESP.restart();
         // }
+        MQTT::initialized = true;
     }
     else
     {
