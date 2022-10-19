@@ -8,6 +8,7 @@
 #include "devices/airsensor.h"
 #include "devices/fan.h"
 #include "devices/light.h"
+#include "devices/heater.h"
 #include "communication/mqtt.h"
 
 uint8_t pin = LOW;
@@ -30,6 +31,7 @@ Scheduler *scheduler = nullptr;
 ESP8266AVRISP *avrIsp = nullptr;
 Fan *fan = nullptr;
 Light *light = nullptr;
+Heater *heater = nullptr;
 
 Task *updaterTask = nullptr;
 Task *mqttTickTask = nullptr;
@@ -62,6 +64,7 @@ ADC_MODE(ADC_TOUT);
 void setup() {
     Serial.begin(115200);
     Wire.begin(D2, D1);
+    pinMode(D4, OUTPUT);
     avrIsp = new ESP8266AVRISP(1000, D4);
     avrIsp->setReset(false);
     avrIsp->begin();
@@ -78,6 +81,7 @@ void setup() {
     AirSensor::publishConfig();
     fan = new Fan();
     light = new Light();
+    heater = new Heater();
     initializeScheduler();
     // put your setup code here, to run once:
     // pinMode(LED_BUILTIN, OUTPUT);
@@ -194,6 +198,7 @@ void pauseInterrupt() {
 
 void measurementTick() {
     AirSensor::readAndPublish();
+    heater->pidTick(AirSensor::temp);
 }
 
 void initializeWifi() {
@@ -210,7 +215,7 @@ void initializeScheduler() {
 
     encoderTask = new Task(TASK_SECOND, TASK_FOREVER, encoderTick, scheduler, true, nullptr, nullptr);
 
-    measurementTask = new Task(TASK_SECOND * 15, TASK_FOREVER, measurementTick, scheduler, true, nullptr);
+    measurementTask = new Task(TASK_SECOND * 10, TASK_FOREVER, measurementTick, scheduler, true, nullptr);
 
     wdtTask = new Task(TASK_SECOND * 5, TASK_FOREVER, wdtTick, scheduler, true, nullptr, nullptr);
 }

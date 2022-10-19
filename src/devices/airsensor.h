@@ -8,6 +8,8 @@ class AirSensor {
 public:
     static void publishConfig();
     static void readAndPublish();
+    static float temp;
+    static int humi;
 private:
     static HDC1080 temperatureSensor;
 

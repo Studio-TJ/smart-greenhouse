@@ -43,7 +43,7 @@ void Fan::handleSetPowerMsg(byte *payload, int length) {
 
 uint8_t Fan::setSpeedPercentage(uint8_t percentage) {
     CommandValue fanControl = {
-        .fanControl = { .percentage = percentage }
+        .fanControl = { .speedPercentage = percentage }
     };
     Wire.beginTransmission(AVR_ADDR);
     Wire.write(CommandType::SET_FAN_SPEED);

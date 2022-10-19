@@ -8,6 +8,9 @@ constexpr uint16_t MSG_SIZE = 2048;
 const String statusTopic = "studiotj/greenhouse/air_data/status";
 const String availabilityTemplate = "{{ value_json.availability }}";
 
+float AirSensor::temp = 0;
+int AirSensor::humi = 0;
+
 const struct {
     const String uniqueId = "airsensor_temperature_" + WiFi.macAddress();
     const String name = "greenhouse_temperature";
@@ -93,8 +96,14 @@ void AirSensor::readAndPublish() {
     Serial.print((double)temperatureInt / 100);
     Serial.print(", hum: ");
     Serial.println(humidityInt);
-    if (airData.temperature != -40 ) stateInfo["temperature"] = (double)temperatureInt / 100;
-    if (humidityInt != 100) stateInfo["humidity"] = humidityInt;
+    if (airData.temperature != -40 ) {
+        stateInfo["temperature"] = (double)temperatureInt / 100;
+        AirSensor::temp = (float)temperatureInt / 100;
+    }
+    if (humidityInt != 0) {
+        stateInfo["humidity"] = humidityInt;
+        AirSensor::humi = humidityInt;
+    }
     stateInfo["availability"] = temperatureSensor.deviceIsAvailable()? Availability.available : Availability.notAvailable;
     String outJson;
     serializeJson(stateInfo, outJson);

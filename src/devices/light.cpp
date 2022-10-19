@@ -43,7 +43,7 @@ void Light::handleSetPowerMsg(byte *payload, int length) {
 
 uint8_t Light::setBrightness(uint8_t brightnessPercentage) {
     CommandValue lightControl = {
-        .lightControl = { .brightnessPercentage = brightnessPercentage }
+        .lightControl = { .brightness = brightnessPercentage }
     };
     Wire.beginTransmission(AVR_ADDR);
     Wire.write(CommandType::SET_LIGHT_BRIGHTNESS);
