@@ -104,7 +104,7 @@ void Heater::pidTick(float currentTemp) {
 
 void Heater::publishCurrentState() {
     StaticJsonDocument<STATUS_MSG_SIZE> stateInfo;
-    stateInfo["action"] = HeaterInfo.actions.off;
+    stateInfo["action"] = action;
     stateInfo["availability"] = Availability.available;
     stateInfo["mode"] = mode;
     stateInfo["fan_mode"] = HeaterInfo.fanModes.automatic;
