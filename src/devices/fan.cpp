@@ -32,9 +32,10 @@ uint8_t Fan::setPower(boolean enable) {
 void Fan::handleSetPowerMsg(byte *payload, int length) {
     boolean enable = (memcmp(payload, "ON", length) == 0);
     if (setPower(enable) == 0) {
+        state = enable ? "ON" : "OFF";
         StaticJsonDocument<STATUS_MSG_SIZE> json;
         json["availability"] = Availability.available;
-        json["state"] = enable ? "ON" : "OFF";
+        json["state"] = state;
         String outJson;
         serializeJson(json, outJson);
         MQTT::client.publish(FanInfo.statusTopic.c_str(), outJson.c_str(), true);
@@ -58,13 +59,24 @@ void Fan::handleSetSpeedPercentage(byte *payload, int length) {
     uint8_t percentageMsg = percentage;
     if (percentage == FanInfo.speedPercentageRangeMin - 1) percentage = 0; // speed starts from FanInfo.min min - 1 means 0, it's a limitation of mqtt fan in hassio
     if (setSpeedPercentage(percentage) == 0) {
+        this->percentage = percentageMsg;
         StaticJsonDocument<STATUS_MSG_SIZE> json;
         json["availability"] = Availability.available;
-        json["percentage"] = percentageMsg;
+        json["percentage"] = this->percentage;
         String outJson;
         serializeJson(json, outJson);
         MQTT::client.publish(FanInfo.statusTopic.c_str(), outJson.c_str(), true);
     }
+}
+
+void Fan::publishCurrentState() {
+    StaticJsonDocument<STATUS_MSG_SIZE> stateInfo;
+    stateInfo["availability"] = Availability.available;
+    stateInfo["percentage"] = percentage;
+    stateInfo["state"] = state;
+    String outJson;
+    serializeJson(stateInfo, outJson);
+    MQTT::client.publish(FanInfo.statusTopic.c_str(), outJson.c_str(), true);
 }
 
 void Fan::publishInitialState() {

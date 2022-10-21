@@ -23,7 +23,10 @@ public:
     void handleSetPowerMsg(byte *payload, int length);
     uint8_t setBrightness(uint8_t brightnessPercentage);
     void handleSetBrightnessMsg(byte *payload, int length);
+    void publishCurrentState();
     static void publishInitialState();
 
 private:
+    String state = "OFF";
+    uint8_t brightness = 0;
 };

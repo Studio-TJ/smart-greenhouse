@@ -28,7 +28,9 @@ public:
     void handleSetPowerMsg(byte *payload, int length);
     uint8_t setSpeedPercentage(uint8_t percentage);
     void handleSetSpeedPercentage(byte *payload, int length);
+    void publishCurrentState();
     static void publishInitialState();
 private:
-
+    String state = "OFF";
+    uint8_t percentage = FanInfo.speedPercentageRangeMin - 1;
 };

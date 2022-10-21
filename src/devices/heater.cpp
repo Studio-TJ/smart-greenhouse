@@ -10,9 +10,9 @@ constexpr uint16_t CONFIG_MSG_SIZE = 2048;
 constexpr uint16_t STATUS_MSG_SIZE = 256;
 
 Heater::Heater()
-    : kp(1)
-    , ki(0)
-    , kd(0)
+    : kp(700)
+    , ki(5.95)
+    , kd(63000)
     , pid(&tempIn, &heaterOutput, &tempSetpoint, kp, ki, kd, DIRECT) {
     MQTT::callback.emplace(HeaterInfo.modes.setTopic, std::bind(&Heater::handleSetModeMsg, this,
     std::placeholders::_1, std::placeholders::_2));
@@ -22,7 +22,7 @@ Heater::Heater()
     std::placeholders::_1, std::placeholders::_2));
     Heater::publishInitialState();
     pid.SetMode(AUTOMATIC);
-    pid.SetSampleTime(2500);
+    pid.SetSampleTime(12000);
 }
 
 uint8_t Heater::setPower(boolean enable) {
@@ -53,13 +53,15 @@ void Heater::handleSetModeMsg(byte *payload, int length) {
     char chars[length + 1];
     memcpy(chars, payload, length);
     chars[length] = '\0';
-    mode = String(chars);
-    boolean enable = (mode.equals("heat"));
+    String modeLocal = String(chars);
+    boolean enable = (modeLocal.equals("heat"));
     if (setPower(enable) == 0) {
+        mode = modeLocal;
+        action = enable ? HeaterInfo.actions.idle : HeaterInfo.actions.off;
         StaticJsonDocument<STATUS_MSG_SIZE> json;
         json["availability"] = Availability.available;
         json["mode"] = mode;
-        json["action"] = enable ? HeaterInfo.actions.idle : HeaterInfo.actions.off;
+        json["action"] = action;
         String outJson;
         serializeJson(json, outJson);
         MQTT::client.publish(HeaterInfo.statusTopic.c_str(), outJson.c_str(), true);
@@ -87,16 +89,30 @@ void Heater::pidTick(float currentTemp) {
         StaticJsonDocument<STATUS_MSG_SIZE> json;
         json["availability"] = Availability.available;
         if (heaterOutput > 0) {
-            json["action"] = HeaterInfo.actions.heating;
+            action = HeaterInfo.actions.heating;
         } else {
-            json["action"] = HeaterInfo.actions.idle;
+            action = HeaterInfo.actions.idle;
         }
+        json["action"] = action;
         json["outputValue"] = heaterOutput;
         String outJson;
         serializeJson(json, outJson);
         MQTT::client.publish(HeaterInfo.statusTopic.c_str(), outJson.c_str(), true);
     }
     Serial.println(heaterOutput);
+}
+
+void Heater::publishCurrentState() {
+    StaticJsonDocument<STATUS_MSG_SIZE> stateInfo;
+    stateInfo["action"] = HeaterInfo.actions.off;
+    stateInfo["availability"] = Availability.available;
+    stateInfo["mode"] = mode;
+    stateInfo["fan_mode"] = HeaterInfo.fanModes.automatic;
+    stateInfo["tempSetPoint"] = 24.0f;
+
+    String outJson;
+    serializeJson(stateInfo, outJson);
+    MQTT::client.publish(HeaterInfo.statusTopic.c_str(), outJson.c_str(), true);
 }
 
 void Heater::publishInitialState() {
@@ -117,7 +133,7 @@ void Heater::publishInitialState() {
     JsonArray modes = configInfo.createNestedArray("modes");
     modes.add(HeaterInfo.modes.off);
     modes.add(HeaterInfo.modes.heat);
-    modes.add(HeaterInfo.modes.fanOnly);
+    // modes.add(HeaterInfo.modes.fanOnly);
     configInfo["mode_state_topic"] = HeaterInfo.statusTopic;
     configInfo["mode_state_template"] = "{{ value_json.mode }}";
     configInfo["mode_command_topic"] = HeaterInfo.modes.setTopic;

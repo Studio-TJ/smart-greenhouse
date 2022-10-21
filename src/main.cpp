@@ -52,11 +52,11 @@ void wdtTick();
 void pauseInterrupt();
 
 void measurementTick();
+void deviceUpdateStateTick();
 Task *measurementTask = nullptr;
+Task *deviceUpdateStateTask = nullptr;
 
-void encoderTick();
 void encoderSmallTick();
-Task *encoderTask = nullptr;
 Task *wdtTask = nullptr;
 // ADC_MODE(ADC_VCC);
 ADC_MODE(ADC_TOUT);
@@ -69,12 +69,6 @@ void setup() {
     avrIsp->setReset(false);
     avrIsp->begin();
 
-    // pwmDriver = new Adafruit_PWMServoDriver(0b1000001);
-    // pwmDriver->begin();
-    // pwmDriver->setPWMFreq(500);
-    // pwmDriver->setPWM(3, 0, 2048);
-    // pwmDriver->setPin(3, 2047);
-    // Serial.println(ESP.getVcc());
     initializeWifi();
     updater = new Esp8266OTA("esp8266", "password", pauseInterrupt);
     MQTT::connect("10.238.75.62", 1883, "mqtt", "mqtt");
@@ -83,54 +77,14 @@ void setup() {
     light = new Light();
     heater = new Heater();
     initializeScheduler();
-    // put your setup code here, to run once:
-    // pinMode(LED_BUILTIN, OUTPUT);
-    // pinMode(testPin, OUTPUT);
     pinMode(wdtPin, OUTPUT);
-    // digitalWrite(wdtPin, LOW);
-    // pinMode(0, INPUT_PULLUP);
-    // pinMode(D6, OUTPUT);
-    // digitalWrite(D6, HIGH);
-    // pinMode(encoderPin, INPUT_PULLUP);
-    // pinMode(encoderSmallPin, INPUT_PULLDOWN_16);
-    // pinMode(encoderSmallPin, OUTPUT);
-    // digitalWrite(encoderSmallPin, LOW);
-    // pinMode(A0, INPUT);
-    // digitalWrite(LED_BUILTIN, pin);
-    // digitalWrite(testPin, HIGH);
-    // analogWrite(testPin, 0);
-    // analogWrite(wdtPin, 0);
-    // analogWriteFreq(500);
-    // analogWriteRange(range);
-    // analogWrite(testPin, 255);
-    // attachInterrupt(digitalPinToInterrupt(0), pinTriggered, FALLING);
     attachInterrupt(digitalPinToInterrupt(encoderPin), encoderTriggered, FALLING);
-    // attachInterrupt(digitalPinToInterrupt(encoderSmallPin), encoderSmallTriggered, FALLING);
+
 }
 
 void loop() {
     scheduler->execute();
     yield();
-    // put your main code here, to run repeatedly:
-    // digitalWrite(12, pin);
-    // pin = (pin == LOW)? HIGH : LOW;
-    // analogWrite(wdtPin, dutyCycleValue);
-    // dutyCycleValue += delta;
-    // if (dutyCycleValue >= 255) delta = -1;
-    // if (dutyCycleValue <= 0) delta = 1;
-    // delay(50);
-    // if (millis() - lastMills >= 1000UL) {
-    //     lastMills = millis();
-
-    // }
-
-    // if (millis() - lastMillsLong >= 1000UL) {
-    //     int rpm = (encoderStep / 2) * 60;
-    //     encoderStep = 0;
-    //     Serial.write("rpm: ");
-    //     Serial.println(rpm);
-    //     lastMillsLong = millis();
-    // }
 }
 
 void pinTriggered() {
@@ -143,53 +97,16 @@ void pinTriggered() {
 
 void encoderTriggered() {
     detachInterrupt(encoderPin);
-    // encoderStep ++;
-    // if (pca9555->readPinValue(PIN_1_7)) encoderStep++;
-    // Serial.println(pca9555->readPinValue(PIN_1_7));
-    // Serial.println(digitalRead(encoderPin));
     attachInterrupt(digitalPinToInterrupt(encoderPin), encoderTriggered, FALLING);
 }
 
 void encoderSmallTriggered() {
     encoderStepsSmall ++;
-    // Serial.println(encoderStepsSmall);
 }
 
 void timerISR() {
     digitalWrite(wdtPin, HIGH);
     timer1_detachInterrupt();
-}
-
-void encoderTick() {
-    // Wire.beginTransmission(24);
-    // Wire.write((char)20);
-    // Wire.endTransmission();
-    // Wire.requestFrom(24, 1);
-    // MQTT::checkConnection();
-    // int rpm = (encoderStep / 2) * 60;
-    // int rpmSmall = (encoderStepsSmall / 2) * 60;
-    // Serial.println(encoderStepsSmall);
-    // encoderStep = 0;
-    // encoderStepsSmall = 0;
-    // Serial.write("rpm1: ");
-    // Serial.println(rpm);
-    // Serial.println(pwmDriver->getPWM(3));
-    // Serial.write(", rpm2: ");
-    // Serial.println(rpmSmall);
-
-    // float sensor = ((float)analogRead(A0)) / 1024.0;
-    // float r = (sensor * 820000) / (3.3 - sensor);
-    // Serial.println(r);
-    // Serial.println(hdc1080->measureTemperature());
-    // Serial.println(hdc1080->measureHumidity());
-    // AirData airdata = hdc1080->measureTempAndHum();
-    // Serial.print(airdata.temperature);
-    // Serial.print(", ");
-    // Serial.println(airdata.humidity);
-    // pca9555->setPinType(PIN_1_7, INPUT_PIN);
-    // pca9555->setPinType(PinNumber::PIN_1_0, PinType::OUTPUT_PIN);
-    // pca9555->togglePin(PIN_1_0);
-    // Serial.println(pca9555->readPinValue(PIN_1_7));
 }
 
 void pauseInterrupt() {
@@ -213,9 +130,9 @@ void initializeScheduler() {
     mqttTickTask = new Task(TASK_MILLISECOND, TASK_FOREVER, mqttTick, scheduler, true, nullptr, nullptr);
     mqttCheckConnectionTask = new Task(TASK_SECOND * 30, TASK_FOREVER, mqttCheckConnection, scheduler, true, nullptr, nullptr);
 
-    encoderTask = new Task(TASK_SECOND, TASK_FOREVER, encoderTick, scheduler, true, nullptr, nullptr);
-
     measurementTask = new Task(TASK_SECOND * 10, TASK_FOREVER, measurementTick, scheduler, true, nullptr);
+
+    deviceUpdateStateTask = new Task(TASK_MINUTE, TASK_FOREVER, deviceUpdateStateTick, scheduler, true, nullptr, nullptr);
 
     wdtTask = new Task(TASK_SECOND * 5, TASK_FOREVER, wdtTick, scheduler, true, nullptr, nullptr);
 }
@@ -226,6 +143,12 @@ void wdtTick() {
     // timer1_attachInterrupt(timerISR);
     // timer1_enable(TIM_DIV16, TIM_EDGE, TIM_SINGLE);
     // timer1_write(600000);
+}
+
+void deviceUpdateStateTick() {
+    light->publishCurrentState();
+    heater->publishCurrentState();
+    fan->publishCurrentState();
 }
 
 void updaterTick() {

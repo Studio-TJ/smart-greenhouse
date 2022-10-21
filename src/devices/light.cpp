@@ -32,9 +32,10 @@ uint8_t Light::setPower(boolean enable) {
 void Light::handleSetPowerMsg(byte *payload, int length) {
     boolean enable = (memcmp(payload, "ON", length) == 0);
     if (setPower(enable) == 0) {
+        state = enable ? "ON" : "OFF";
         StaticJsonDocument<STATUS_MSG_SIZE> json;
         json["availability"] = Availability.available;
-        json["state"] = enable ? "ON" : "OFF";
+        json["state"] = state;
         String outJson;
         serializeJson(json, outJson);
         MQTT::client.publish(LightInfo.statusTopic.c_str(), outJson.c_str(), true);
@@ -56,9 +57,10 @@ void Light::handleSetBrightnessMsg(byte *payload, int length) {
     memcpy(brightnessChar, payload, length);
     uint8_t brightness = atoi(brightnessChar);
     if (setBrightness(brightness) == 0) {
+        this->brightness = brightness;
         StaticJsonDocument<STATUS_MSG_SIZE> json;
         json["availability"] = Availability.available;
-        json["brightness"] = brightness;
+        json["brightness"] = this->brightness;
         String outJson;
         serializeJson(json, outJson);
         MQTT::client.publish(LightInfo.statusTopic.c_str(), outJson.c_str(), true);
@@ -89,6 +91,16 @@ void Light::publishInitialState() {
     stateInfo["state"] = "OFF";
     stateInfo["brightness"] = 0;
     outJson.clear();
+    serializeJson(stateInfo, outJson);
+    MQTT::client.publish(LightInfo.statusTopic.c_str(), outJson.c_str(), true);
+}
+
+void Light::publishCurrentState() {
+    StaticJsonDocument<STATUS_MSG_SIZE> stateInfo;
+    stateInfo["availability"] = Availability.available;
+    stateInfo["state"] = state;
+    stateInfo["brightness"] = brightness;
+    String outJson;
     serializeJson(stateInfo, outJson);
     MQTT::client.publish(LightInfo.statusTopic.c_str(), outJson.c_str(), true);
 }

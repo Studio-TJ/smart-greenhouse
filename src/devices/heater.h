@@ -50,9 +50,11 @@ public:
     void pidTick(float currentTemp);
 
     static void publishInitialState();
+    void publishCurrentState();
 
 private:
     String mode = HeaterInfo.modes.off;
+    String action = HeaterInfo.actions.off;
     double tempSetpoint = 24.0f;
     double kp;
     double ki;
