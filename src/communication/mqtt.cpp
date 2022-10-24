@@ -47,6 +47,8 @@ void MQTT::checkConnection() {
     if (!MQTT::client.connected()) {
         Serial.println("MQTT reconnect");
         MQTT::client.connect("Greenhouse Controller", MQTT::uName.c_str(), MQTT::pass.c_str());
+        client.subscribe("studiotj/greenhouse/+/+/set/#");
+        client.setCallback(mqtt_cb);
     }
 }
 
