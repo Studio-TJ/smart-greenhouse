@@ -2,7 +2,7 @@
 #include <ESP8266WiFi.h>
 
 #include "mqtt.h"
-#include "boardcomm.h"
+#include "../../interface/boardcomm.h"
 #include "../devices/common.h"
 #include "../devices/fan.h"
 #include "../devices/airsensor.h"

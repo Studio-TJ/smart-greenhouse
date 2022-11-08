@@ -1,7 +1,7 @@
 #include <ArduinoJson.h>
 #include <Wire.h>
 
-#include "boardcomm.h"
+#include "../../interface/boardcomm.h"
 #include "common.h"
 #include "light.h"
 #include "../communication/mqtt.h"

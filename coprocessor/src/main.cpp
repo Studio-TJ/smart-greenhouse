@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#include "boardcomm.h"
+#include "../../interface/boardcomm.h"
 
 double rRef = 61400;
 double rMeasure = 0;
