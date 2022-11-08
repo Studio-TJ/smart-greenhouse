@@ -1,9 +1,9 @@
-[submodule "lib/ESP8266-Arduino-OTA"]
+[submodule "main-controller/lib/ESP8266-Arduino-OTA"]
 	path = main-controller/lib/ESP8266-Arduino-OTA
 	url = git@github.com:t-liu93/ESP8266-Arduino-OTA.git
-[submodule "lib/hdc1080-adruino"]
+[submodule "main-controller/lib/hdc1080-adruino"]
 	path = main-controller/lib/hdc1080-adruino
 	url = git@github.com:t-liu93/hdc1080-adruino.git
-[submodule "lib/greenhouse-controller-interface"]
+[submodule "main-controller/lib/greenhouse-controller-interface"]
 	path = main-controller/lib/greenhouse-controller-interface
 	url = git@github.com:t-liu93/greenhouse-controller-interface.git
