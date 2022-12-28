@@ -108,7 +108,7 @@ void Heater::publishCurrentState() {
     stateInfo["availability"] = Availability.available;
     stateInfo["mode"] = mode;
     stateInfo["fan_mode"] = HeaterInfo.fanModes.automatic;
-    stateInfo["tempSetPoint"] = 24.0f;
+    stateInfo["tempSetPoint"] = tempSetpoint;
 
     String outJson;
     serializeJson(stateInfo, outJson);
