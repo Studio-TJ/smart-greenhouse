@@ -88,9 +88,9 @@ void Heater::pidTick(float currentTemp) {
     if (setOutputPercentage((uint8_t)heaterOutput) == 0) {
         StaticJsonDocument<STATUS_MSG_SIZE> json;
         json["availability"] = Availability.available;
+        heaterOutputPercentage = (int)(((double)heaterOutput / 255.0f) * 100);
         if (heaterOutput > 0) {
             action = HeaterInfo.actions.heating;
-            heaterOutputPercentage = (int)((heaterOutput / 255) * 100);
         } else {
             action = HeaterInfo.actions.idle;
         }
