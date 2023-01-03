@@ -90,11 +90,12 @@ void Heater::pidTick(float currentTemp) {
         json["availability"] = Availability.available;
         if (heaterOutput > 0) {
             action = HeaterInfo.actions.heating;
+            heaterOutputPercentage = (int)((heaterOutput / 255) * 100);
         } else {
             action = HeaterInfo.actions.idle;
         }
         json["action"] = action;
-        json["outputValue"] = heaterOutput;
+        json["heating_level"] = heaterOutputPercentage;
         String outJson;
         serializeJson(json, outJson);
         MQTT::client.publish(HeaterInfo.statusTopic.c_str(), outJson.c_str(), true);
@@ -109,6 +110,7 @@ void Heater::publishCurrentState() {
     stateInfo["mode"] = mode;
     stateInfo["fan_mode"] = HeaterInfo.fanModes.automatic;
     stateInfo["tempSetPoint"] = tempSetpoint;
+    stateInfo["heating_level"] = heaterOutputPercentage;
 
     String outJson;
     serializeJson(stateInfo, outJson);
@@ -119,6 +121,7 @@ void Heater::publishInitialState() {
     StaticJsonDocument<CONFIG_MSG_SIZE> configInfo;
     constructDeviceInfo(&configInfo);
 
+    // Following heater config
     // General config
     configInfo["unique_id"] = HeaterInfo.uniqueId;
     configInfo["name"] = HeaterInfo.name;
@@ -167,7 +170,7 @@ void Heater::publishInitialState() {
     String outJson;
     serializeJson(configInfo, outJson);
     MQTT::client.setBufferSize(CONFIG_MSG_SIZE);
-    MQTT::client.publish("homeassistant/climate/greenhouse/heater/config", outJson.c_str(), true);
+    MQTT::client.publish(HeaterInfo.discoveryTopic.c_str(), outJson.c_str(), true);
 
     StaticJsonDocument<STATUS_MSG_SIZE> stateInfo;
     stateInfo["action"] = HeaterInfo.actions.off;
@@ -176,6 +179,31 @@ void Heater::publishInitialState() {
     stateInfo["fan_mode"] = HeaterInfo.fanModes.automatic;
     stateInfo["tempSetPoint"] = 24.0f;
 
+    outJson.clear();
+    serializeJson(stateInfo, outJson);
+    MQTT::client.publish(HeaterInfo.statusTopic.c_str(), outJson.c_str(), true);
+
+    // Following heater level sensor config
+    configInfo.clear();
+    constructDeviceInfo(&configInfo);
+    configInfo["unique_id"] = HeaterSensorInfo.outSensorId;
+    configInfo["name"] = HeaterSensorInfo.name;
+    configInfo["json_attributes_topic"] = HeaterSensorInfo.baseTopic;
+
+    configInfo["availability_topic"] = HeaterSensorInfo.statusTopic;
+    configInfo["availability_template"] = "{{ value_json.availability }}";
+
+    configInfo["state_class"] = HeaterSensorInfo.stateClass;
+    configInfo["state_topic"] = HeaterSensorInfo.statusTopic;
+    configInfo["unit_of_measurement"] = HeaterSensorInfo.unitOfMeasurement;
+    configInfo["value_template"] = HeaterSensorInfo.valueTemplate;
+
+    outJson.clear();
+    serializeJson(configInfo, outJson);
+    MQTT::client.publish(HeaterSensorInfo.discoveryTopic.c_str(), outJson.c_str(), true);
+
+    stateInfo.clear();
+    stateInfo["heating_level"] = 0;
     outJson.clear();
     serializeJson(stateInfo, outJson);
     MQTT::client.publish(HeaterInfo.statusTopic.c_str(), outJson.c_str(), true);

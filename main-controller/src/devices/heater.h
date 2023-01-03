@@ -7,6 +7,7 @@
 const struct {
     const String uniqueId = "heater_" + WiFi.macAddress();
     const String name = "greenhouse_heater";
+    const String discoveryTopic = "homeassistant/climate/greenhouse/heater/config";
     const String baseTopic = "studiotj/greenhouse/heater";
     const String statusTopic = "studiotj/greenhouse/heater/status";
     const struct {
@@ -38,6 +39,18 @@ const struct {
     String current_temperature_template = "{{ value_json.temperature }}";
 } HeaterInfo;
 
+const struct {
+    const String outSensorId = "heaterSensor_" + WiFi.macAddress();
+    const String name = "greenhouse_heater_heating_level";
+    const String baseTopic = "studiotj/greenhouse/heating_level";
+    const String statusTopic = "studiotj/greenhouse/heater/status";
+    const String discoveryTopic = "homeassistant/sensor/greenhouse/heater_level/config";
+    const String stateClass = "measurement";
+    const String unitOfMeasurement = "%";
+    const String valueTemplate = "{{ value_json.heating_level }}";
+
+} HeaterSensorInfo;
+
 class Heater
 {
 public:
@@ -62,4 +75,5 @@ private:
     PID pid;
     double tempIn = 0;
     double heaterOutput = 0;
+    int heaterOutputPercentage = 0;
 };
